@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WaveView">
+        <!-- 波形颜色. -->
+        <attr name="waveColor" format="color" />
+        <!-- 一个屏幕宽度绘制的波形数量，默认 640 条 -->
+        <attr name="waveCount" format="integer" />
+    </declare-styleable>
+</resources>
