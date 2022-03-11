@@ -141,7 +141,7 @@ public class WaveView extends LinearLayout {
             volume += Math.abs(temp);
         }
         volume /= 20 * 16;
-        volume /= buffer.length / 160 + 1;
+        volume /= buffer.length / 160 + 6.5;
 //        volume = Math.min(volume, 1000.0);
         try {
             return Double.parseDouble(df.format(volume));
