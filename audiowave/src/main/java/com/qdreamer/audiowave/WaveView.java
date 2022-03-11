@@ -7,7 +7,6 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -79,9 +78,8 @@ public class WaveView extends LinearLayout {
     public void clear() {
         mWaveAdapter.setNewData(null);
         mRcyWave.scrollToPosition(0);
+        lastVoice = null;
     }
-
-    private float lastVolume = 0;
 
     public void feedAudioData(byte[] data) {
         if (data == null || data.length <= 0) return;
@@ -89,10 +87,6 @@ public class WaveView extends LinearLayout {
             enableScroll = false;
         }
         float volume = (float) calculateVolume(data);
-        if (volume > lastVolume) {
-            Log.i("WaveView", "feedAudioData: " + volume);
-            lastVolume = volume;
-        }
         int index;
         WaveItemModel model;
         if (mWaveAdapter.getData().isEmpty() || mWaveAdapter.needToNext()) {
