@@ -7,6 +7,7 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,12 +81,18 @@ public class WaveView extends LinearLayout {
         mRcyWave.scrollToPosition(0);
     }
 
+    private float lastVolume = 0;
+
     public void feedAudioData(byte[] data) {
         if (data == null || data.length <= 0) return;
         if (enableScroll) { // 绘制时不让拖动波形
             enableScroll = false;
         }
         float volume = (float) calculateVolume(data);
+        if (volume > lastVolume) {
+            Log.i("WaveView", "feedAudioData: " + volume);
+            lastVolume = volume;
+        }
         int index;
         WaveItemModel model;
         if (mWaveAdapter.getData().isEmpty() || mWaveAdapter.needToNext()) {
@@ -101,28 +108,43 @@ public class WaveView extends LinearLayout {
         mRcyWave.scrollToPosition(mWaveAdapter.getItemCount() - 1);
     }
 
+    /**
+     * 用于 buffer 传的是奇数时，与下一个 buffer 的第一位匹配，因为 16k/16bit/单通道的数据中，每个采样点是 2 个字节
+     */
+    private Byte lastVoice = null;
+
     private double calculateVolume(byte[] buffer) {
         double volume = 0.0;
         DecimalFormat df = new DecimalFormat("######0");
         int i = 0;
         while (i < buffer.length) {
-            if (i + 1 == buffer.length) {
-                break;
+            int v1;
+            int v2;
+            if (lastVoice == null) {
+                if (i + 1 == buffer.length) {
+                    lastVoice = buffer[buffer.length - 1];
+                    break;
+                }
+                v1 = buffer[i] & 0xFF;
+                v2 = buffer[i + 1] & 0xFF;
+                i += 2;
+            } else {
+                v1 = lastVoice;
+                v2 = buffer[i] & 0xFF;
+                i += 1;
+                lastVoice = null;
             }
-            int v1 = buffer[i] & 0xFF;
-            int v2 = buffer[i + 1] & 0xFF;
             int temp = v1 + (v2 << 8);  // 小端
             if (temp >= 0x8000) {
                 temp = 0xffff - temp;
             }
             volume += Math.abs(temp);
-            i += 2;
         }
         volume /= 20 * 16;
-        volume /= 6500.0;
-        volume = Math.min(volume, 1.0);
+        volume /= buffer.length / 160 + 1;
+//        volume = Math.min(volume, 1000.0);
         try {
-            return Double.parseDouble(df.format(volume * 1000));
+            return Double.parseDouble(df.format(volume));
         } catch (Exception e) {
             return 0.0;
         }
